@@ -84,27 +84,6 @@ def make_gauss_var(size,sigma,inchannels=1,outchannels=1):
     var = torch.tensor(kernel)
     return var
 
-def relative_spatial_variant_mask(mask,hsize=64,sigma=1/40,iters=9):
-    eps = 1e-5
-    kernel = make_gauss_var(hsize,sigma).cuda()
-    init = 1-mask
-
-    lay = nn.Conv2d(1,1,64,1,32,bias=False)
-    lay.weight = nn.Parameter(kernel,requires_grad=False)
-    for i in range(iters):
-        #mask_priority = F.pad(lay(torch.tensor(init)),(0,1,0,1))
-        mask_priority = lay(init)[:,:,:-1,:-1]
-        mask_priority *= mask
-        if i == iters-2:
-            mask_priority_pre = mask_priority
-        init = mask_priority + (1-mask)
-    mask_priority = mask_priority_pre/(mask_priority+eps)
-    
-    #plt.imshow(compressTensor(mask_priority)); plt.show()
-    return mask_priority 
-
-
-
 class build_generator(nn.Module):
     def __init__(self,config):
         super(build_generator,self).__init__()
@@ -297,7 +276,8 @@ class SemanticRegenerationNet(nn.Module):
         self.config = config
         self.build_generator = build_generator(config)
         self.build_contextual_wgan_discriminator = build_contextual_wgan_discriminator(config)
-        #self.mrfloss = IDMRFLoss()
+        if config.mrf_alpha:
+            self.mrfloss = IDMRFLoss()
 
         self.bbox_gen = random_square
         self.subpixelconv = nn.Conv2d(1,1,64,1,31,bias=False)
@@ -309,8 +289,8 @@ class SemanticRegenerationNet(nn.Module):
         init = 1-mask.clone().detach()
 
         for i in range(iters):
-            #mask_priority = F.pad(self.subpixelconv(init),(0,1,0,1))
-            mask_priority = F.interpolate(self.subpixelconv(init),mask.shape[2:])
+            mask_priority = F.pad(self.subpixelconv(init),(0,1,0,1))
+            #mask_priority = F.interpolate(self.subpixelconv(init),mask.shape[2:])
             mask_priority *= mask
             if i == iters-2:
                 mask_priority_pre = mask_priority
@@ -396,8 +376,8 @@ class SemanticRegenerationNet(nn.Module):
         self.config.feat_content_layers = {'conv4_2':1.0}
         self.config.mrf_style_w = 1.0
         self.config.mrf_content_w = 1.0
-            
-        #losses['id_mrf_loss'] = self.mrfloss(batch_predicted,x)
+        if self.config.mrf_alpha:    
+            losses['id_mrf_loss'] = self.mrfloss(batch_predicted,x)
 
         # loss calculation for generator
         losses['l1_loss'] = self.config.pretrain_l1_alpha*torch.mean(torch.abs(x-x_)*mask_priority)
@@ -413,7 +393,8 @@ class SemanticRegenerationNet(nn.Module):
         viz_img = compressTensor(viz_img).transpose(1,2,0)*127.5+127.5
         losses['g_loss'] = global_wgan_loss_alpha*g_loss_global+g_loss_local
         losses['g_loss'] *= self.config.gan_loss_alpha
-        #losses['g_loss'] += self.config.mrf_alpha*losses['id_mrf_loss']
+        if self.config.mrf_alpha:
+            losses['g_loss'] += self.config.mrf_alpha*losses['id_mrf_loss']
         losses['g_loss'] += self.config.l1_loss_alpha*losses['l1_loss']
         losses['g_loss'] += self.config.ae_loss_alpha*losses['ae_loss']
         return losses,viz_img
@@ -435,7 +416,7 @@ class SemanticRegenerationNet(nn.Module):
         batch_complete = batch_predicted*mask + x*(1-mask)
         # ----------------------------------------------------------
         if oD is not None and oG is not None:
-            for i in range(5):
+            for i in range(self.config.lpD):
                 oD.zero_grad();oG.zero_grad()
                 _,_,_,_,losses = self.forwardD(x,batch_complete,mask,losses)
                 losses['d_loss'].backward(retain_graph=True)
