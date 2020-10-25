@@ -2,7 +2,7 @@ import argparse
 from torch.utils.tensorboard import SummaryWriter
 
 import os
-from net import *
+from net2 import *
 from data import *
 import tqdm
 import torch.optim as optim
@@ -69,9 +69,9 @@ if __name__ == "__main__":
                     writer.add_scalars('loss',{'g_loss':losses['g_loss'].item(),
                         'd_loss':losses['d_loss'].item()},ite)
                     if args.mrf_alpha:
-                        writer.add_scalars('loss2',{'id_mrf_loss':losses['id_mrf_loss'].item(),'l1_loss':losses['l1_loss'].item(),'ae_loss':losses['ae_loss'].item(),'gp_loss':losses['gp_loss'].item()},ite)
+                        writer.add_scalars('loss2',{'id_mrf_loss':losses['id_mrf_loss'].item(),'l1_loss':losses['l1_loss'].item(),'ae_loss':losses['ae_loss'].item()},ite)
                     else:
-                        writer.add_scalars('loss2',{'l1_loss':losses['l1_loss'].item(),'ae_loss':losses['ae_loss'].item(),'gp_loss':losses['gp_loss'].item()},ite)
+                        writer.add_scalars('loss2',{'l1_loss':losses['l1_loss'].item(),'ae_loss':losses['ae_loss'].item()},ite)
                 ite+=1
             # save parameters
             if epoch%20 == 0:
