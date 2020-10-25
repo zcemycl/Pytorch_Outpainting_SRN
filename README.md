@@ -39,3 +39,6 @@ tensorboard --logdir=log/store
 ## Preliminary Result 
 - 40 epochs pretrain GAN
 <img src="outputs/current.png" width="40%" > 
+
+- Refine SRN
+TODO
