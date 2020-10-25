@@ -64,7 +64,7 @@ if __name__ == "__main__":
         # Training loop
         ite = 0
         for epoch in range(args.epoch):
-            print('[INFO] Epoch '.format(epoch))
+            print('[INFO] Epoch {}'.format(epoch))
             for idx,im in enumerate(tqdm.tqdm(dataloader)):
                 im = im.to('cuda:0')
                 losses,viz = model(im,optimG,optimD)
