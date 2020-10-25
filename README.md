@@ -7,8 +7,22 @@ This repo aims to train both generator and discriminator from scratch, except th
 1. Download the `cat2dog` dataset, only use `TrainB` folder for model training. 
 2. Run the file to initiate the training progress. 
 ```python
-python main.py [--batch_size][--epoch][--g_cnum][--d_cnum][--gan_loss_alpha]
-[--wgan_gp_lambda][--pretrain_l1_alpha][--l1_loss_alpha][--ae_loss_alpha][--fa_alpha]
+python main.py [--pretrained_network 1][--weightpath None][--img_shapes [256,256,3]]
+[--batch_size 4][--epoch 1000][--g_cnum 64][--d_cnum 64][--gan_loss_alpha 0.001]
+[--wgan_gp_lambda 10][--pretrain_l1_alpha 1.2][--l1_loss_alpha 4.2]
+[--ae_loss_alpha 1.2][--fa_alpha 0.5][--mrf_alpha 0.05][--lrG 1e-4][--lrD 1e-4]
+[--lpD 5][--beta1 0.5][--beta2 0.9][--summarydir 'log/store']
+```
+  * Train GAN first
+```python
+python main.py --pretrained_network=1 --batch_size=8 --gan_loss_alpha=0 --pretrain_l1_alpha=5
+--mrf_alpha=0 --lrG=1e-5 --lrD=5e-5 --beta1 0.5 --beta2 0.9 --summarydir=log/store
+```
+  * Refine SRN
+```python
+python main.py --pretrained_network=0 --weightpath=log/store --batch_size=8 
+--lrG=1e-5 --lrD=5e-5 --mrf_alpha=0.05 --summarydir=log/store5 --beta1=.5 --beta2=.9 --pretrain_l1_alpha=1.2 
+--gan_loss_alpha=0.001 
 ```
 3. Run Tensorboard via, 
 
@@ -18,5 +32,6 @@ python main.py [--batch_size][--epoch][--g_cnum][--d_cnum][--gan_loss_alpha]
 tensorboard --logdir=log/store
 ```
 
-## Preliminary Result (about 30 epochs)
+## Preliminary Result 
+- 40 epochs pretrain GAN
 <img src="outputs/current.png" width="40%" > 
