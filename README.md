@@ -1,7 +1,11 @@
 # Pytorch_Outpainting_SRN
 This repository rewrites tensorflow implementation of [Wide-Context Semantic Image Extrapolation](http://jiaya.me/papers/imgextrapolation_cvpr19.pdf) paper into PyTorch causally. It refers to the github repository [Jia-Research-Lab/outpainting_srn](https://github.com/Jia-Research-Lab/outpainting_srn), and copies some files `pytorch/{model,util}` from [shepnerd/inpainting_gmcnn](https://github.com/shepnerd/inpainting_gmcnn) to compute `IDMRFLoss` of `VGG19`.
 ## Description
-This repo aims to train both generator and discriminator from scratch, except the pretrained VGG19 model. It only implements part of the tensorflow one, i.e. subpixel convolution, SegmenticRegerenationNet and relative spatial variant mask. Training the model with `VGG19 IDMRFLoss` fails to converge, so I exclude that loss at the current stage. 
+This repo aims to train both generator and discriminator from scratch, except the pretrained VGG19 model. It only implements part of the tensorflow one, i.e. subpixel convolution, SegmenticRegerenationNet and relative spatial variant mask. <s>Training the model with `VGG19 IDMRFLoss` fails to converge, so I exclude that loss at the current stage. </s>
+
+According to the paper, the training steps are stated as follows,
+1. Try pretraining GAN, with settings `pretrain_l1_alpha=5, mrf_alpha=0, gan_loss_alpha=0`
+2. Refining SRN, with settings `pretrain_l1_alpha=1.2, mrf_alpha=0.05, gan_loss_alpha=0.001`
 
 ## How to run?
 1. Download the `cat2dog` dataset, only use `TrainB` folder for model training. 
