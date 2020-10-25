@@ -17,6 +17,8 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument('--data',type=str,default='/media/yui/Disk/data/cat2dog/')
     p.add_argument('--epoch',type=int,default=1000)
+    p.add_argument('--pretrained_network',type=int,default=1,description="1: to pretrain network, 0: to finetune network")
+    p.add_argument('--weightpath',type=str,description="specify if pretrained_network=0")
     p.add_argument('--mode',type=str,default='train',choices=['train','test'])
     p.add_argument('--img_shapes',nargs='+',default=[256,256,3])
     p.add_argument('--mask_shapes',nargs='+',default=[128,128])
@@ -52,12 +54,17 @@ if __name__ == "__main__":
                     transforms.Resize(args.img_shapes[:2]),transforms.ToTensor()])
         dog = dogDataset(transform=trans)
         dataloader = DataLoader(dog,batch_size=args.batch_size,shuffle=True,num_workers=0)
+        
         model = SemanticRegenerationNet(args).to('cuda:0')
+        if args.pretrained_network:
+            model.build_generator.load_state_dict(torch.load(args.weightpath+'/G.pt'))
+            model.build_contextual_wgan_discriminator.load_state_dict(torch.load(args.weightpath+'/D.pt'))
         optimG = optim.Adam(model.build_generator.parameters(),lr=args.lrG,betas=(args.beta1,args.beta2))
         optimD = optim.Adam(model.build_contextual_wgan_discriminator.parameters(),lr=args.lrD,betas=(args.beta1,args.beta2))
         # Training loop
         ite = 0
         for epoch in range(args.epoch):
+            print('[INFO] Epoch '.format(epoch))
             for idx,im in enumerate(tqdm.tqdm(dataloader)):
                 im = im.to('cuda:0')
                 losses,viz = model(im,optimG,optimD)
@@ -74,9 +81,10 @@ if __name__ == "__main__":
                         writer.add_scalars('loss2',{'l1_loss':losses['l1_loss'].item(),'ae_loss':losses['ae_loss'].item()},ite)
                 ite+=1
             # save parameters
-            if epoch%20 == 0:
-                torch.save(model.build_generator.state_dict(),'log/store/G.pt')
-                torch.save(model.build_contextual_wgan_discriminator.state_dict(),'log/store/D.pt')
+            if epoch%5 == 0:
+                print('[INFO] Saving parameters ...')
+                torch.save(model.build_generator.state_dict(),args.summarydir+'/G.pt')
+                torch.save(model.build_contextual_wgan_discriminator.state_dict(),args.summarydir+'/D.pt')
             #pdb.set_trace()           
     elif args.mode == "test":
         pass
