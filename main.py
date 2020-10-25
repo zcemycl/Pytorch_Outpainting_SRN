@@ -17,8 +17,8 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument('--data',type=str,default='/media/yui/Disk/data/cat2dog/')
     p.add_argument('--epoch',type=int,default=1000)
-    p.add_argument('--pretrained_network',type=int,default=1,description="1: to pretrain network, 0: to finetune network")
-    p.add_argument('--weightpath',type=str,description="specify if pretrained_network=0")
+    p.add_argument('--pretrained_network',type=int,default=1,help="1: to pretrain network, 0: to finetune network")
+    p.add_argument('--weightpath',type=str,help="specify if pretrained_network=0")
     p.add_argument('--mode',type=str,default='train',choices=['train','test'])
     p.add_argument('--img_shapes',nargs='+',default=[256,256,3])
     p.add_argument('--mask_shapes',nargs='+',default=[128,128])
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         dataloader = DataLoader(dog,batch_size=args.batch_size,shuffle=True,num_workers=0)
         
         model = SemanticRegenerationNet(args).to('cuda:0')
-        if args.pretrained_network:
+        if not args.pretrained_network:
             model.build_generator.load_state_dict(torch.load(args.weightpath+'/G.pt'))
             model.build_contextual_wgan_discriminator.load_state_dict(torch.load(args.weightpath+'/D.pt'))
         optimG = optim.Adam(model.build_generator.parameters(),lr=args.lrG,betas=(args.beta1,args.beta2))
