@@ -310,9 +310,9 @@ class SemanticRegenerationNet(nn.Module):
         return interpolates
 
     def gan_wgan_loss(self,pos,neg):
-        #d_loss = torch.mean(neg-pos)
+        d_loss = torch.mean(neg-pos)
         #d_loss = torch.mean(pos-neg)
-        d_loss = F.relu(1-pos).mean()+F.relu(1+neg).mean()
+        #d_loss = F.relu(1-pos).mean()+F.relu(1+neg).mean()
         g_loss = -torch.mean(neg)
         return g_loss,d_loss
     
@@ -413,11 +413,12 @@ class SemanticRegenerationNet(nn.Module):
         batch_complete = batch_predicted*mask + x*(1-mask)
         # ----------------------------------------------------------
         if oD is not None and oG is not None:
-            for i in range(self.config.lpD):
-                oD.zero_grad();oG.zero_grad()
-                _,_,_,_,losses = self.forwardD(x,batch_complete,mask,losses)
-                losses['d_loss'].backward(retain_graph=True)
-                oD.step()
+            if not self.config.pretrained_network:
+                for i in range(self.config.lpD):
+                    oD.zero_grad();oG.zero_grad()
+                    _,_,_,_,losses = self.forwardD(x,batch_complete,mask,losses)
+                    losses['d_loss'].backward(retain_graph=True)
+                    oD.step()
         
             oG.zero_grad()
             losses,viz_img=self.forwardG(x,batch_incomplete,batch_predicted,batch_complete,mask,mask_priority,margin,losses)
